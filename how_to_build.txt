@@ -1,0 +1,11 @@
+# build which ever dock a file is in the root of our project that were currently
+docker build .
+
+# build image using the Docker compose configuration
+docker-compose build
+
+# "app" is the docker compose "app"
+# docker-compose run app run this command on app thaht get run no
+# Linux container that we created using our Docker file
+# sh -c run shell script and pass in command 
+docker-compose run app sh -c "django-admin.py startproject app ."

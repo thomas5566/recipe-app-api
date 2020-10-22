@@ -1,0 +1,24 @@
+# Version of Docker compose
+version: "3"
+
+services: 
+    # name of the service
+    # we're going to have a service called app and the build section of the configuration
+    app:
+        build: 
+            # . is meaing our current directory that we're running Docker compose from
+            context: .
+        ports: 
+            # map our porject from port 8000 on host to port 8000 on Docker image
+            - "8000:8000"
+        # Volume allows us to get the updates that we make to our project
+        # into Docker image in real time
+        volumes: 
+            # maps the app directory to the app directory in Docker image
+            - ./app:/app
+        # run command using shell 
+        # run the Django development server available on all the IP address 
+        # that run on the Docker container and run port 8000 at local machine
+        command: >
+         sh -c "python manage.py runserver 0.0.0.0:8000"
+        
