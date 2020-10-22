@@ -1,0 +1,16 @@
+# every push a change to github Travis is going to spin up a
+# Python server running version is "3.6"
+language: python
+python:
+    - "3.6"
+
+# use pip install docker compose 
+services:
+    - docker
+
+before_script: pip install docker-compose
+
+# run script and if this exits with a failure then it will fail the build
+# and it will send us a notifications
+script:
+    - docker-compose run app sh -c "python manage.py test && flake8"
