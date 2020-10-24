@@ -9,3 +9,8 @@ docker-compose build
 # Linux container that we created using our Docker file
 # sh -c run shell script and pass in command 
 docker-compose run app sh -c "django-admin.py startproject app ."
+
+
+# run test file docker-compose run app sh -c "python manage.py test"
+
+# docker-compose run app sh -c "python manage.py test && flake8"
