@@ -20,5 +20,29 @@ services:
         # run the Django development server available on all the IP address 
         # that run on the Docker container and run port 8000 at local machine
         command: >
-         sh -c "python manage.py runserver 0.0.0.0:8000"
-        
+         sh -c "python manage.py wait_for_db && 
+                python manage.py migrate &&
+                python manage.py runserver 0.0.0.0:8000"
+        environment: 
+            # equal db
+            - DB_HOST=db
+            # equal POSTGRES_DB
+            - DB_NAME=app
+            # equal POSTGRES_USER
+            - DB_USER=postgres
+            # equal POSTGRES_PASSWORD
+            - DB_PASS=supersecretpassword
+        # Add the depends on the setting
+        # when run docker compose can set diffrent services to depend on other services
+        # we want our app depend on the database service that we create
+        # 1) the database service will start befort the app service
+        # 2) the database service will be availble via the network when you use the hostname DB_HOST=db 
+        depends_on: 
+            - db
+    db:
+        image: postgres:10-alpine
+        environment: 
+            # setting that the Postgres container is expecting when it starts
+            - POSTGRES_DB=app
+            - POSTGRES_USER=postgres
+            - POSTGRES_PASSWORD=supersecretpassword
