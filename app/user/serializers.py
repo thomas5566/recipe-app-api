@@ -35,6 +35,30 @@ class UserSerializer(serializers.ModelSerializer):
         # that was made in the HTTP POST
         return get_user_model().objects.create_user(**validated_data)
 
+    def update(self, instance, validate_data):
+        """Update a user, setting the password correctly and retuen it"""
+        # this is we want to make sure the password is set using the
+        # set_password function instead of just setting it to
+        # whichever values is provided
+
+        # instance is the model instance that is linked to model
+        # serizlizer that is user object
+        # validate_data is fields = ("email", "password", "name")
+        # that have been through the validation and ready to update
+        # first is remove the password from the validated data
+        # do that using the dictionary pop function
+        # use None here is because with the pop function
+        # must provide a default value
+        password = validate_data.pop('password', None)
+        # super() will call the ModelSerializer update function
+        user = super().update(instance, validate_data)
+
+        if password:
+            user.set_password(password)
+            user.save()
+
+        return user
+
 # this function is called when we validate our serializer
 # validation is checking the input are all correct
 # is a CharField or a character field and password is CharField

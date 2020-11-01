@@ -14,6 +14,8 @@ from rest_framework import status
 CREATE_USER_URL = reverse("user:create")
 # This URL is use to make the HTTP POST request to generate our token
 TOKEN_URL = reverse('user:token')
+# update user endpoint 'me' URL
+ME_URL = reverse('user:me')
 
 
 # **param dynamic list of arguments
@@ -148,3 +150,65 @@ class PublicUserApiTests(TestCase):
         res = self.client.post(TOKEN_URL, {'email': 'one', 'password': ''})
         self.assertNotIn('token', res.data)
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_retrieve_user_unauthorized(self):
+        """Test that authentication is required for users"""
+        # a HTTP get to the ME_URL
+        res = self.client.get(ME_URL)
+
+        # make sure that if you call the URL without any authentication
+        # it returns HTTP_401_UNAUTHORIZED
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class PrivateUserApiTests(TestCase):
+    """Test API request that require authentication"""
+
+    def setUp(self):
+        self.user = create_user(
+            email='test@gmail.com',
+            password='testpass',
+            name='test'
+        )
+        # create a reusable client
+        self.client = APIClient()
+        # help function for simulate or making authenticated request
+        self.client.force_authenticate(user=self.user)
+
+    def test_retrieve_profile_success(self):
+        """Test retrieving profile for logged in user"""
+        res = self.client.get(ME_URL)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        # test that the user object returned is what we expect
+        # no need to sending password because it's hash and
+        # no need for that password to bo on the client-side
+        # if provide that password it will make it accessible
+        # then it just opens up for different vulnerabilities
+        self.assertEqual(res.data, {
+            'name': self.user.name,
+            'email': self.user.email
+        })
+
+    def test_post_me_not_allowed(self):
+        """Test that POST is not allowed on the me url"""
+        # test that cannot do a HTTP POST request on the profile
+        res = self.client.post(ME_URL, {})
+
+        # standard response when you try and do a HTTP
+        # method that is not allowed on the API
+        self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_update_user_profile(self):
+        """Test updating the user profile for authenticated user"""
+        # user profile update test
+        payload = {'name': 'new name', 'password': 'newpassword123'}
+
+        res = self.client.patch(ME_URL, payload)
+        # refresh_from_db help function
+        # to update the user with
+        # the latest values from the database
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.name, payload['name'])
+        self.assertTrue(self.user.check_password(payload['password']))
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
