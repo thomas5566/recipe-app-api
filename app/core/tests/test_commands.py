@@ -43,7 +43,7 @@ class CommandTests(TestCase):
     # mean test it won't actually wait the second or however long
     # you have it to wait in your code
     @patch("time.sleep", return_value=True)
-    # do same thig with patch
+    # do same thing with patch
     # ('django.db.utils.ConnectionHandler.__getitem__') as gi:
     # then pass gi as an argument to test_wait_for_db
     def test_wait_for_db(self, ts):

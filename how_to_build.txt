@@ -14,3 +14,8 @@ docker-compose run app sh -c "django-admin.py startproject app ."
 # run test file docker-compose run app sh -c "python manage.py test"
 
 # docker-compose run app sh -c "python manage.py test && flake8"
+
+# create a new applaction
+# removees the container after it's ran the command
+# just make sure we don't run out of space 
+docker-compose run --rm app sh -c "python manage.py startproject <name>"
