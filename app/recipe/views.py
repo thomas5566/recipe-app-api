@@ -7,7 +7,9 @@ from core.models import Tag
 from . import serializers
 
 
-class TagViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
+class TagViewSet(viewsets.GenericViewSet,
+                 mixins.ListModelMixin,
+                 mixins.CreateModelMixin):
     """Manage tags in the database"""
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
@@ -30,3 +32,12 @@ class TagViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
         # so you want to be change it in one place and this
         # should be the objects that are being rendered by viewset
         return self.queryset.filter(user=self.request.user).order_by('-name')
+
+    def perform_create(self, serializer):
+        """Create a new tag"""
+        # perform_create function allows to hook into the
+        # create process when creating an object
+        # when doing perform_create object in viewset
+        # this function will be in invoked and the serializer
+        # validated serializer will be passed in as a serializer argumrnt
+        serializer.save(user=self.request.user)
