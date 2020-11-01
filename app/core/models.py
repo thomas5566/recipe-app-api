@@ -5,6 +5,11 @@ from django.contrib.auth.models import (
     PermissionsMixin,
 )
 
+# recommended way to retrieve different settings from the
+# Django settings file so "settings" retrieve auth user model
+from django.conf import settings
+from django.db.models.deletion import CASCADE
+
 
 class UserManager(BaseUserManager):
     # **extra_fields (optional) => take any of the extra functions
@@ -59,3 +64,17 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     # default the USERNAME_FIELD is customizing that to email
     USERNAME_FIELD = "email"
+
+
+class Tag(models.Model):
+    """Tag to be used for a recipe"""
+    name = models.CharField(max_length=255)
+    # best practice method of retrieving the AUTH_USER_MODEL
+    # setting from Django settings
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=CASCADE,
+    )
+
+    def __str__(self):
+        return self.name
