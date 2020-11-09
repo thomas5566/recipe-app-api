@@ -12,6 +12,7 @@ routers = DefaultRouter()
 # this register our viewset with out router
 routers.register('tags', views.TagViewSet)
 routers.register('ingredients', views.IngredientViewSet)
+routers.register('recipes', views.RecipeViewSet)
 
 app_name = 'recipe'
 
