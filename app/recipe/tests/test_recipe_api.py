@@ -1,3 +1,11 @@
+# allows to generate temporary files and then can remove
+# that file after used it
+import tempfile
+import os
+
+# create test images then we can upload to our API
+from PIL import Image
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -11,6 +19,13 @@ from recipe.serializers import RecipeSerializer, RecipeDetailSerializer
 
 
 RECIPES_URL = reverse('recipe:recipe-list')
+
+
+def image_upload_url(recipe_id):
+    """Return URL for recipe image upload"""
+    # recipe-upload-image the name give to our custom function
+    # or our custom URL for endpoint
+    return reverse('recipe:recipe-upload-image', args=[recipe_id])
 
 
 def detail_url(recipe_id):
@@ -202,3 +217,64 @@ class PrivateRecipeApiTests(TestCase):
         self.assertEqual(recipe.price, payload['price'])
         tags = recipe.tags.all()
         self.assertEqual(len(tags), 0)
+
+
+class RecipeImageUploadTests(TestCase):
+
+    def setUp(self):
+        # setUp function is before the test runs it runs setUp
+        # and then after the test runs it runs teardown
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            'user@gmail.com',
+            'testpass'
+        )
+        self.client.force_authenticate(self.user)
+        # to be a consistent theme for all of the tests we add to
+        # our recipe image upload test module
+        # we want to have a recipe already created for each one
+        # in order to test
+        self.recipe = sample_recipe(user=self.user)
+
+    def tearDown(self):
+        # make sure that our file system is kept clean after
+        # our tests and this means removing all of the test files
+        # that we create we don't want test files building up on
+        # the system and then clogging up every single time
+        # we run a test it will create an image so make sure
+        # that image is properly removed after we run the test
+        self.recipe.image.delete()
+
+    def test_upload_image_to_recipe(self):
+        """Test uploading an image to recipe"""
+        url = image_upload_url(self.recipe.id)
+        # create a temporary file in the system that we can
+        # then write to and then after you exit the context manager
+        # so after you're outside the with statement it will
+        # automatically remove that file
+        with tempfile.NamedTemporaryFile(suffix='.jpg') as ntf:
+            img = Image.new('RGB', (10, 10))
+            img.save(ntf, format='JPEG')
+            # Python reads files, because we've saved the file it
+            # will seeking will be done to the end of the file
+            # so if you try to access it then it would just be blank
+            # because already read up to the end of the file so use
+            # this seek function to set the pointer back to the beginning
+            # of the file so then it's as if you've just open it
+            ntf.seek(0)
+            # tell Django we want to make multi-part from request
+            # which means a from that consists of data by befault
+            # it would just be a form consists of a JSON object
+            res = self.client.post(url, {'image': ntf}, format='multipart')
+
+        self.recipe.refresh_from_db()
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn('image', res.data)
+        self.assertTrue(os.path.exists(self.recipe.image.path))
+
+    def test_upload_image_bad_request(self):
+        """Test uploading an invalid image"""
+        url = image_upload_url(self.recipe.id)
+        res = self.client.post(url, {'image': 'notimage'}, format='multipart')
+
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
