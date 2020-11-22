@@ -83,9 +83,32 @@ class RecipeViewSet(viewsets.ModelViewSet):
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
 
+    def _params_to_ints(self, qs):
+        """Convert a list of string IDs to a list of integers"""
+        return [int(str_id) for str_id in qs.split(',')]
+
     def get_queryset(self):
         """Retrieve the recipes for the authenticated user"""
-        return self.queryset.filter(user=self.request.user)
+        tags = self.request.query_params.get('tags')
+        ingredients = self.request.query_params.get('ingredients')
+        # we do this is because we don't want to be reassigning
+        # our query set with the filtered option we want to
+        # actually reference queryset apply the filter and then
+        # return that instead of our main query
+        queryset = self.queryset
+        if tags:
+            tag_ids = self._params_to_ints(tags)
+            # __ Django syntax for filtering on foreign key objects
+            # tags field in our queryset in a recipe query set
+            # and that has a foreign key to the tags table wihich
+            # has an ID, __in return all of the tags where the ID
+            # is in this list that we provide
+            queryset = queryset.filter(tags__id__in=tag_ids)
+        if ingredients:
+            ingredients_ids = self._params_to_ints(ingredients)
+            queryset = queryset.filter(ingredients__id__in=ingredients_ids)
+
+        return queryset.filter(user=self.request.user)
 
     def get_serializer_class(self):
         """Return appropriate serializer class"""
